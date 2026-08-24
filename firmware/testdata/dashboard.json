@@ -1,0 +1,40 @@
+{
+  "generated_at": "2026-08-24T23:30:00+09:00",
+  "device": {
+    "name": "paperdesk-dev",
+    "timezone": "Asia/Seoul"
+  },
+  "calendar": {
+    "year": 2026,
+    "month": 8,
+    "today": 24
+  },
+  "events": [
+    {
+      "id": "event-001",
+      "title": "Team Meeting",
+      "start": "2026-08-24T10:00:00+09:00",
+      "end": "2026-08-24T11:00:00+09:00",
+      "all_day": false
+    },
+    {
+      "id": "event-002",
+      "title": "Study Day",
+      "start": "2026-08-26T00:00:00+09:00",
+      "end": "2026-08-27T00:00:00+09:00",
+      "all_day": true
+    }
+  ],
+  "ddays": [
+    {
+      "title": "Demo Day",
+      "date": "2026-09-21",
+      "days_remaining": 28
+    }
+  ],
+  "environment": {
+    "temperature": 26.4,
+    "humidity": 52.0,
+    "source": "mock"
+  }
+}

@@ -22,3 +22,7 @@ simulator/output/
 # OS
 .DS_Store
 Thumbs.db
+
+# ESP-IDF
+firmware/build/
+firmware/sdkconfig.old
