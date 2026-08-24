@@ -1,0 +1,24 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Virtual environment
+.venv/
+
+# Secrets / local configuration
+.env
+backend/.env
+backend/secrets/
+*.token.json
+
+# Simulator generated output
+simulator/output/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
