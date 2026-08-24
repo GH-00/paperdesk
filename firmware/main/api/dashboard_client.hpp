@@ -1,10 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include <string>
 
 #include "../models/dashboard.hpp"
 
+
 namespace paperdesk {
+
 
 class DashboardClient {
 public:
@@ -19,5 +21,6 @@ public:
 private:
     std::string base_url_;
 };
+
 
 }
