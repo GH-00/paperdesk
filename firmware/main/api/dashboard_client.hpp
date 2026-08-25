@@ -15,7 +15,8 @@ public:
     );
 
     bool fetch(
-        Dashboard& dashboard
+        Dashboard& dashboard,
+        std::string* raw_json = nullptr
     );
 
 private:
