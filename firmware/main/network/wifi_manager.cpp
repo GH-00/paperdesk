@@ -256,6 +256,29 @@ esp_err_t WifiManager::connect(
 }
 
 
+bool WifiManager::wait_for_connection(
+    TickType_t timeout_ticks
+)
+{
+    if (event_group_ == nullptr) {
+        return false;
+    }
+
+    const EventBits_t bits =
+        xEventGroupWaitBits(
+            event_group_,
+            WIFI_CONNECTED_BIT | WIFI_FAILED_BIT,
+            pdFALSE,
+            pdFALSE,
+            timeout_ticks
+        );
+
+    return (
+        (bits & WIFI_CONNECTED_BIT) != 0
+    );
+}
+
+
 bool WifiManager::is_connected() const
 {
     if (event_group_ == nullptr) {

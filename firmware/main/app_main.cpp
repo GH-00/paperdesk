@@ -1,13 +1,36 @@
-#include "models/dashboard.hpp"
-#include "pages/page.hpp"
+#if __has_include("config/wifi_credentials.hpp")
+#include "config/wifi_credentials.hpp"
+#else
+#include "config/wifi_credentials.example.hpp"
+#endif
+
+#include "application/paperdesk_app.hpp"
+
+
+namespace {
+
+
+constexpr const char* DASHBOARD_BASE_URL =
+#ifdef CONFIG_PAPERDESK_DASHBOARD_BASE_URL
+    CONFIG_PAPERDESK_DASHBOARD_BASE_URL;
+#else
+    "";
+#endif
+
+
+}
 
 extern "C" void app_main()
 {
-    paperdesk::Dashboard dashboard;
+    static paperdesk::PaperdeskApp app(
+        DASHBOARD_BASE_URL
+    );
 
-    paperdesk::Page current_page =
-        paperdesk::Page::Calendar;
+    const bool data_available =
+        app.run(
+            paperdesk::wifi_credentials::SSID,
+            paperdesk::wifi_credentials::PASSWORD
+        );
 
-    (void)dashboard;
-    (void)current_page;
+    (void)data_available;
 }

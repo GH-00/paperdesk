@@ -28,6 +28,10 @@ public:
         const char* password
     );
 
+    bool wait_for_connection(
+        TickType_t timeout_ticks
+    );
+
     bool is_connected() const;
 
     esp_err_t disconnect();
