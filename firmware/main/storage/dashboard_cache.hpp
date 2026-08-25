@@ -8,6 +8,7 @@ namespace paperdesk {
 
 class DashboardCache {
 public:
+    DashboardCache() = default;
     ~DashboardCache();
 
     DashboardCache(const DashboardCache&) = delete;
