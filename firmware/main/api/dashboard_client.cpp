@@ -134,7 +134,8 @@ DashboardClient::DashboardClient(
 
 
 bool DashboardClient::fetch(
-    Dashboard& dashboard
+    Dashboard& dashboard,
+    std::string* raw_json
 )
 {
     const std::string url =
@@ -299,6 +300,10 @@ bool DashboardClient::fetch(
         );
 
         return false;
+    }
+
+    if (raw_json != nullptr) {
+        *raw_json = response.body;
     }
 
     ESP_LOGI(
