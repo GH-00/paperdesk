@@ -3,6 +3,7 @@ idf_component_register(
         "app_main.cpp"
         "api/dashboard_client.cpp"
         "api/dashboard_parser.cpp"
+        "network/wifi_manager.cpp"
         "storage/dashboard_cache.cpp"
 
     INCLUDE_DIRS
@@ -14,6 +15,10 @@ idf_component_register(
         "storage"
 
     REQUIRES
+        esp_event
         esp_http_client
+        esp_netif
+        esp_wifi
         json
+        nvs_flash
 )
