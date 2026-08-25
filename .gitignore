@@ -12,6 +12,9 @@ backend/.env
 backend/secrets/
 *.token.json
 
+# Local firmware Wi-Fi credentials
+firmware/main/config/wifi_credentials.hpp
+
 # Simulator generated output
 simulator/output/
 
