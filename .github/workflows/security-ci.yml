@@ -46,7 +46,7 @@ jobs:
         run: semgrep --version
 
       - name: Run Semgrep scan
-        run: semgrep scan --config=auto --error --metrics=off backend/app
+        run: semgrep scan --config=p/security-audit --error --metrics=off backend/app
 
   trivy-repository:
     name: Trivy repository security
