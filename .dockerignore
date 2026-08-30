@@ -1,0 +1,34 @@
+# Version control
+.git
+.github
+
+# Python environments and caches
+.venv
+**/.pytest_cache/
+**/__pycache__/
+**/*.py[cod]
+.Python
+
+# Environment files
+.env
+**/.env
+backend/secrets
+**/credentials.json
+**/token.json
+*.token.json
+
+# Excluded directories
+firmware
+simulator
+docs
+
+# Backend test artifacts
+backend/tests
+backend/google_test.py
+
+# IDE
+.vscode
+.idea
+
+# Documentation
+README.md
