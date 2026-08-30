@@ -1,0 +1,142 @@
+name: Paperdesk Container CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - backend/app/**
+      - backend/requirements.txt
+      - .github/workflows/container-ci.yml
+  push:
+    branches:
+      - develop
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - backend/app/**
+      - backend/requirements.txt
+      - .github/workflows/container-ci.yml
+
+permissions:
+  contents: read
+
+jobs:
+  container-test:
+    name: Container validation
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build validation image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: paperdesk-backend:ci
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run validation container
+        run: >-
+          docker run --detach
+          --name paperdesk-backend-ci
+          --publish 8000:8000
+          --env CALENDAR_PROVIDER=mock
+          paperdesk-backend:ci
+
+      - name: Wait for Docker HEALTHCHECK
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..30}; do
+            health_status="$(docker inspect --format='{{.State.Health.Status}}' paperdesk-backend-ci 2>/dev/null || true)"
+            if [[ "$health_status" == "healthy" ]]; then
+              exit 0
+            fi
+            if [[ "$health_status" == "unhealthy" || "$health_status" == "" ]]; then
+              break
+            fi
+            sleep 2
+          done
+          docker ps -a
+          docker logs paperdesk-backend-ci
+          echo "Container did not become healthy."
+          exit 1
+
+      - name: Run runtime smoke validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error http://localhost:8000/health
+          curl --fail --silent --show-error http://localhost:8000/api/v1/dashboard
+          [[ "$(docker exec paperdesk-backend-ci whoami)" == "paperdesk" ]]
+          secret_files="$(docker exec paperdesk-backend-ci sh -c 'find /app -type f \( -name ".env" -o -name "credentials.json" -o -name "token.json" \) -print -quit')"
+          [[ -z "$secret_files" ]]
+
+      - name: Clean up validation container
+        if: always()
+        run: docker rm -f paperdesk-backend-ci
+
+  container-publish:
+    name: Publish container to GHCR
+    needs: container-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/gh-00/paperdesk-backend
+          tags: |
+            type=raw,value=develop
+            type=raw,value=sha-${{ github.sha }}
+
+      - name: Build and push image
+        id: publish
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Report published image
+        run: |
+          {
+            echo "### Published container"
+            echo "- Image: ghcr.io/gh-00/paperdesk-backend"
+            echo "- Develop tag: ghcr.io/gh-00/paperdesk-backend:develop"
+            echo "- SHA tag: ghcr.io/gh-00/paperdesk-backend:sha-${GITHUB_SHA}"
+            echo "- Image digest: ${{ steps.publish.outputs.digest }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Image digest: ${{ steps.publish.outputs.digest }}"
