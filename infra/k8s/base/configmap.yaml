@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: paperdesk-backend-config
+  namespace: paperdesk
+data:
+  APP_ENV: development
+  TIMEZONE: UTC
+  DEVICE_NAME: paperdesk
+  CALENDAR_PROVIDER: mock
