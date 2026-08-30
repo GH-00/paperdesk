@@ -1,0 +1,36 @@
+name: Paperdesk Firmware CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - firmware/**
+      - .github/workflows/firmware-ci.yml
+  push:
+    branches:
+      - develop
+    paths:
+      - firmware/**
+      - .github/workflows/firmware-ci.yml
+
+permissions:
+  contents: read
+
+jobs:
+  firmware-build:
+    name: Firmware build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install ESP-IDF v5.5.5
+        uses: espressif/install-esp-idf-action@v1
+        with:
+          version: v5.5.5
+
+      - name: Build ESP32-S3 firmware
+        working-directory: firmware
+        run: idf.py build
