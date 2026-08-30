@@ -94,6 +94,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      digest: ${{ steps.publish.outputs.digest }}
 
     steps:
       - name: Check out repository
@@ -159,3 +161,56 @@ jobs:
           name: paperdesk-backend-sbom-${{ github.sha }}
           path: backend-sbom.cdx.json
           retention-days: 30
+
+  container-sign:
+    name: Sign and verify container
+    needs: container-publish
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Show Cosign version
+        run: cosign version
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sign container image
+        env:
+          IMAGE: ghcr.io/gh-00/paperdesk-backend@${{ needs.container-publish.outputs.digest }}
+        run: cosign sign --yes "$IMAGE"
+
+      - name: Verify container image
+        env:
+          IMAGE: ghcr.io/gh-00/paperdesk-backend@${{ needs.container-publish.outputs.digest }}
+          CERTIFICATE_IDENTITY: https://github.com/GH-00/paperdesk/.github/workflows/container-ci.yml@refs/heads/develop
+          OIDC_ISSUER: https://token.actions.githubusercontent.com
+        run: >-
+          cosign verify "$IMAGE"
+          --certificate-identity="$CERTIFICATE_IDENTITY"
+          --certificate-oidc-issuer="$OIDC_ISSUER"
+          --certificate-github-workflow-sha="$GITHUB_SHA"
+
+      - name: Report container signing
+        env:
+          IMAGE_DIGEST: ${{ needs.container-publish.outputs.digest }}
+        run: |
+          {
+            echo "### Container signing"
+            echo "- Image digest: $IMAGE_DIGEST"
+            echo "- Source SHA: ${GITHUB_SHA}"
+            echo "- Signing method: Sigstore keyless"
+            echo "- Expected workflow identity: https://github.com/GH-00/paperdesk/.github/workflows/container-ci.yml@refs/heads/develop"
+            echo "- Verification result: passed"
+          } >> "$GITHUB_STEP_SUMMARY"
