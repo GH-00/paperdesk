@@ -140,3 +140,22 @@ jobs:
             echo "- Image digest: ${{ steps.publish.outputs.digest }}"
           } >> "$GITHUB_STEP_SUMMARY"
           echo "Image digest: ${{ steps.publish.outputs.digest }}"
+
+      - name: Generate backend image SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          image: ghcr.io/gh-00/paperdesk-backend@${{ steps.publish.outputs.digest }}
+          format: cyclonedx-json
+          output-file: backend-sbom.cdx.json
+          syft-version: v1.51.0
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Upload backend SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: paperdesk-backend-sbom-${{ github.sha }}
+          path: backend-sbom.cdx.json
+          retention-days: 30
