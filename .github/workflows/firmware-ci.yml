@@ -90,3 +90,70 @@ jobs:
           name: paperdesk-firmware-${{ github.sha }}
           path: dist/firmware/
           retention-days: 30
+
+  firmware-sign:
+    name: Sign and verify firmware checksums
+    needs: firmware-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Download firmware artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: paperdesk-firmware-${{ github.sha }}
+          path: dist/firmware
+
+      - name: Verify firmware package integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/firmware/SHA256SUMS
+          cd dist/firmware
+          sha256sum --check SHA256SUMS
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Show Cosign version
+        run: cosign version
+
+      - name: Sign firmware checksum manifest
+        run: >-
+          cosign sign-blob
+          --yes
+          --bundle dist/firmware/SHA256SUMS.sigstore.json
+          dist/firmware/SHA256SUMS
+
+      - name: Verify firmware checksum signature
+        env:
+          CERTIFICATE_IDENTITY: https://github.com/GH-00/paperdesk/.github/workflows/firmware-ci.yml@refs/heads/develop
+          OIDC_ISSUER: https://token.actions.githubusercontent.com
+        run: >-
+          cosign verify-blob
+          dist/firmware/SHA256SUMS
+          --bundle dist/firmware/SHA256SUMS.sigstore.json
+          --certificate-identity="$CERTIFICATE_IDENTITY"
+          --certificate-oidc-issuer="$OIDC_ISSUER"
+          --certificate-github-workflow-sha="$GITHUB_SHA"
+
+      - name: Upload firmware signature
+        uses: actions/upload-artifact@v4
+        with:
+          name: paperdesk-firmware-signature-${{ github.sha }}
+          path: dist/firmware/SHA256SUMS.sigstore.json
+          retention-days: 30
+
+      - name: Report firmware signing
+        run: |
+          {
+            echo "### Firmware signing"
+            echo "- Source SHA: ${GITHUB_SHA}"
+            echo "- Signed object: SHA256SUMS"
+            echo "- Bundle artifact: paperdesk-firmware-signature-${GITHUB_SHA}"
+            echo "- Expected workflow identity: https://github.com/GH-00/paperdesk/.github/workflows/firmware-ci.yml@refs/heads/develop"
+            echo "- Verification result: passed"
+          } >> "$GITHUB_STEP_SUMMARY"
